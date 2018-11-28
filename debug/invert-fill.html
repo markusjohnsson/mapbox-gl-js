@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mapbox GL JS debug page</title>
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link rel='stylesheet' href='/dist/mapbox-gl.css' />
+    <style>
+        body { margin: 0; padding: 0; }
+        html, body, #map { height: 100%; }
+    </style>
+</head>
+
+<body>
+<div id='map'></div>
+
+<script src='/dist/mapbox-gl-dev.js'></script>
+<script src='/debug/access_token_generated.js'></script>
+<script>
+
+var map = window.map = new mapboxgl.Map({
+    container: 'map',
+    zoom: 1,
+    center: [0, 0],
+    style: 'mapbox://styles/mapbox/streets-v10',
+    //style: { version: 8, sources: {}, layers: [] }
+});
+
+map.on('load', function () {
+  map.addSource('rect',
+    {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [-30, 30],
+                  [0, 42],
+                  [30, 30],
+                  [42, 0],
+                  [30, -30],
+                  [0, -42],
+                  [-30, -30],
+                  [-42, 0],
+                  [-30, 30]
+                ]
+              ]
+            }
+          }
+        ]
+      }
+  });
+  map.addLayer({
+    id: 'rect',
+    type: 'fill',
+    paint: {
+      'fill-color': "rgba(0, 200, 200, 0.5)"
+    },
+    source: 'rect'
+  })
+})
+
+map.addControl(new mapboxgl.NavigationControl());
+
+</script>
+
+</body>
+</html>

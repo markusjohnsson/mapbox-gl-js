@@ -243,11 +243,11 @@ class Painter {
 
         const program = this.useProgram('clippingMask');
 
-        let idNext = 1;
+        this.idNext = 1;
         this._tileClippingMaskIDs = {};
 
         for (const tileID of tileIDs) {
-            const id = this._tileClippingMaskIDs[tileID.key] = idNext++;
+            const id = this._tileClippingMaskIDs[tileID.key] = this.idNext++;
 
             program.draw(context, gl.TRIANGLES, DepthMode.disabled,
                 // Tests will always pass, and ref value will be written to stencil buffer.
@@ -256,6 +256,10 @@ class Painter {
                 '$clipping', this.tileExtentBuffer,
                 this.quadTriangleIndexBuffer, this.tileExtentSegments);
         }
+    }
+
+    rentStencilMaskId() {
+        return this.idNext++;
     }
 
     stencilModeForClipping(tileID: OverscaledTileID): StencilMode {

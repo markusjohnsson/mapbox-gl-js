@@ -2,7 +2,9 @@
 
 import Color from '../style-spec/util/color';
 import DepthMode from '../gl/depth_mode';
+import StencilMode from '../gl/stencil_mode';
 import CullFaceMode from '../gl/cull_face_mode';
+import ColorMode from '../gl/color_mode';
 import {
     fillUniformValues,
     fillPatternUniformValues,
@@ -116,9 +118,35 @@ function drawFillTiles(painter, sourceCache, layer, coords, depthMode, colorMode
                 fillOutlineUniformValues(tileMatrix, drawingBufferSize);
         }
 
-        program.draw(painter.context, drawMode, depthMode,
-            painter.stencilModeForClipping(coord), colorMode, CullFaceMode.disabled, uniformValues,
-            layer.id, bucket.layoutVertexBuffer, indexBuffer, segments,
-            layer.paint, painter.transform.zoom, programConfiguration);
+        const outsideFill = layer.id == 'rect';
+        if (outsideFill) {
+            // use layer geometry to render to stencil buffer
+
+            const stencilId = painter.rentStencilMaskId();
+
+            painter.useProgram('clippingMask').draw(painter.context, drawMode, DepthMode.disabled,
+                // Tests will always pass, and ref value will be written to stencil buffer.
+                new StencilMode({ func: gl.ALWAYS, mask: 0 }, stencilId, 0xFF, gl.KEEP, gl.KEEP, gl.REPLACE),
+                ColorMode.disabled, CullFaceMode.disabled, uniformValues,
+                layer.id, bucket.layoutVertexBuffer, indexBuffer, segments);
+
+
+            // use tile extent to render to color buffer, masking with stecil buffer
+
+            program.draw(painter.context, drawMode, depthMode,
+                // Tests will always pass, and ref value will be written to stencil buffer.
+                new StencilMode({ func: gl.NOTEQUAL, mask: 0xFF }, stencilId, 0x00, gl.KEEP, gl.KEEP, gl.REPLACE),
+                //painter.stencilModeForClipping(coord),
+                colorMode, CullFaceMode.disabled, uniformValues,
+                layer.id, painter.tileExtentBuffer, painter.quadTriangleIndexBuffer, painter.tileExtentSegments,
+                layer.paint, painter.transform.zoom, programConfiguration);
+
+        }
+        else {
+            program.draw(painter.context, drawMode, depthMode,
+                painter.stencilModeForClipping(coord), colorMode, CullFaceMode.disabled, uniformValues,
+                layer.id, bucket.layoutVertexBuffer, indexBuffer, segments,
+                layer.paint, painter.transform.zoom, programConfiguration);
+        }
     }
 }
